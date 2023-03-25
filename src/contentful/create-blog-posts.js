@@ -1,6 +1,8 @@
 const path = require("path");
 const fs = require("fs-extra");
 const { Observable } = require("rxjs");
+const { richTextFromMarkdown } = require('@contentful/rich-text-from-markdown');
+
 const {
   MOCK_OBSERVER,
   CONTENTFUL_LOCALE,
@@ -69,14 +71,22 @@ const createBlogPosts = (posts, assets, authors, client, observer) => {
 
             await delay();
 
+            const tt =  await transform(post, inlineMap, heroMap, authorMap)
+
+            console.log('tt', tt)
+
             const created = await client.createEntry(
               CONTENT_TYPE,
-              transform(post, inlineMap, heroMap, authorMap)
+              tt
             );
+
             await delay();
             const published = await created.publish();
             await delay();
             resolve(published);
+
+            console.log('\n\n\nTEST', )
+
           })
         ])
 
@@ -112,44 +122,57 @@ const createBlogPosts = (posts, assets, authors, client, observer) => {
   });
 };
 
-function transform(post, inlineMap, heroMap, authorMap) {
+// HERE
+async function transform(post, inlineMap, heroMap, authorMap) {
+
+
+const document = await richTextFromMarkdown('# Hello World');
+
+const body = await richTextFromMarkdown(replaceInlineImageUrls(post.body, inlineMap))
+const description = await richTextFromMarkdown(replaceInlineImageUrls(post.description, inlineMap))
+
+const postImageId =  heroMap.get(post.featured_media || post.bodyImages[0]) || inlineMap.get(post.featured_media || post.bodyImages[0]?.link) 
+
+            // '//images.ctfassets.net/uh890olxrk00/6ag9maB6OBm8XAOIjKJB6s/79f3ec6e911482a187b3a7c98940d8e6/christmas.jpg'
+const ttt =postImageId.split('/')[4]
+
   return {
     fields: {
       title: {
         [CONTENTFUL_LOCALE]: post.title
       },
       body: {
-        [CONTENTFUL_LOCALE]: replaceInlineImageUrls(post.body, inlineMap)
+        [CONTENTFUL_LOCALE]: body
       },
-      description: {
-        [CONTENTFUL_LOCALE]: post.description
+      excerpt: {
+        [CONTENTFUL_LOCALE]: replaceInlineImageUrls(post.description, inlineMap)
       },
       slug: {
         [CONTENTFUL_LOCALE]: post.slug
       },
-      publishDate: {
+      date: {
         [CONTENTFUL_LOCALE]: post.publishDate
       },
-      heroImage: {
+      postImage: {
         [CONTENTFUL_LOCALE]: {
           sys: {
             type: "Link",
             linkType: "Asset",
-            id: heroMap.get(post.featured_media)
+            id: ttt
           }
         }
       },
-      author: {
-        [CONTENTFUL_LOCALE]: {
-          sys: {
-            type: "Link",
-            linkType: "Entry",
-            id: authorMap.has(post.author)
-              ? authorMap.get(post.author)
-              : CONTENTFUL_FALLBACK_USER_ID
-          }
-        }
-      }
+      // author: {
+      //   [CONTENTFUL_LOCALE]: {
+      //     sys: {
+      //       type: "Link",
+      //       linkType: "Entry",
+      //       id: authorMap.has(post.author)
+      //         ? authorMap.get(post.author)
+      //         : CONTENTFUL_FALLBACK_USER_ID
+      //     }
+      //   }
+      // }
     }
   };
 }
@@ -186,11 +209,19 @@ function createMapFromAuthors(authors) {
 
 async function processBlogPosts(client, observer = MOCK_OBSERVER) {
   const files = await findByGlob("*.json", { cwd: POST_DIR_TRANSFORMED });
-  const queue = [...files].sort();
+
+
+  // TODO: operate on single post for now.
+  const queue = [...files].slice(0,1).sort();
+
   const posts = [];
   while (queue.length) {
     const file = queue.shift();
     const post = await fs.readJson(path.join(POST_DIR_TRANSFORMED, file));
+
+    // delete post.description;
+    delete post.yoast_head;
+    delete post.yoast_head_json;
     posts.push(post);
   }
 
