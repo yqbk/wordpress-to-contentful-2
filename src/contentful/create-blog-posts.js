@@ -75,6 +75,59 @@ const createBlogPosts = (posts, assets, authors, client, observer) => {
 
             console.log('tt', tt)
 
+            const t1 = tt.fields.body["en-US"].content
+
+            const url1 = "https://raizinvest.com.au/gettheapp"
+            const url2 =  "https://3yef.adj.st/home?adj_t=4emcfc6_1okyyjf&adj_deep_link=raiz%3A%2F%2Fhome&adj_fallback=https%3A%2F%2Fapp.raizinvest.com.au%2F"
+
+            const checkIsIncorrectBlock = c => c.content[0].nodeType === 'hyperlink' && c.content[0].content[0].nodeType === 'embedded-asset-block' && (c.content[0].data.uri === url1 || c.content[0].data.uri === url2)
+
+            const blockToReplace = {
+              "data": {
+                  "target": {
+                      "sys": {
+                          "id": "1np7UUpbCCtQYZkZXVbCLl",
+                          "type": "Link",
+                          "linkType": "Entry"
+                      }
+                  }
+              },
+              "content": [],
+              "nodeType": "embedded-entry-block"
+          }
+
+            // const t2 = tt.fields.body["en-US"].content.filter(c => c.nodeType === 'paragraph').map(c =>{
+            //   if (checkIsIncorrectBlock(c)) {
+            //     return blockToReplace
+            //   }
+
+            //   return c
+            //   })
+
+              const t3 = tt.fields.body["en-US"].content.reduce((acc,curr) => {
+
+                if (curr.nodeType === 'paragraph' && checkIsIncorrectBlock(curr)) {
+                  return [...acc, blockToReplace]
+                } else {
+                  return [...acc, curr]
+                }
+
+
+              }, [])
+
+              // ).map(c =>{
+              //   if (checkIsIncorrectBlock(c)) {
+              //     return blockToReplace
+              //   }
+  
+              //   return c
+              //   })
+
+            const tx = t3
+
+            tt.fields.body["en-US"].content = tx
+
+
             const created = await client.createEntry(
               CONTENT_TYPE,
               tt
@@ -128,13 +181,52 @@ async function transform(post, inlineMap, heroMap, authorMap) {
 
 const document = await richTextFromMarkdown('# Hello World');
 
-const body = await richTextFromMarkdown(replaceInlineImageUrls(post.body, inlineMap))
+const marek = replaceInlineImageUrls(post.body, inlineMap)
+const body = await richTextFromMarkdown(marek, (node) => {
+
+  const aaa = node.url.split('/')[4]
+
+  console.log('aaa', aaa)
+
+ 
+ const ttt=  {
+    "data": {
+      "target": {
+        "sys": {
+          "id": "67890",
+          "type": "Link",
+          "linkType": "Asset"
+        }
+      }
+    },
+    "content": [],
+    "nodeType": "embedded-asset-block"
+  }
+
+  return {
+
+  // nodeType: 'embedded-[entry|asset]-[block|inline]',
+  // embedded-entry-block
+  // nodeType: 'embedded-asset-block',
+  nodeType: 'embedded-asset-block',
+  content: [],
+  data: {
+    target: {
+      sys: {
+        type: "Link",
+        linkType: "Asset",
+        id: aaa
+      }
+    },
+  }
+
+  }})
 const description = await richTextFromMarkdown(replaceInlineImageUrls(post.description, inlineMap))
 
 const postImageId =  heroMap.get(post.featured_media || post.bodyImages[0]) || inlineMap.get(post.featured_media || post.bodyImages[0]?.link) 
 
             // '//images.ctfassets.net/uh890olxrk00/6ag9maB6OBm8XAOIjKJB6s/79f3ec6e911482a187b3a7c98940d8e6/christmas.jpg'
-const ttt =postImageId.split('/')[4]
+const ttt = postImageId.split('/')[4]
 
   return {
     fields: {
@@ -212,7 +304,7 @@ async function processBlogPosts(client, observer = MOCK_OBSERVER) {
 
 
   // TODO: operate on single post for now.
-  const queue = [...files].slice(0,1).sort();
+  const queue = [...files].sort();
 
   const posts = [];
   while (queue.length) {
