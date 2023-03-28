@@ -175,18 +175,33 @@ const createBlogPosts = (posts, assets, authors, client, observer) => {
   });
 };
 
-// HERE
+
+function transformString1(str) {
+  const regex = /\[!\[(.*?)\]\((.*?)\)\]\((.*?)\)/g;
+  return str.replace(regex, "![$1]($2)/\n[$1]($3)");
+}
+
+// function transformString(str) {
+//   const regex = /(^|\n)(#+\s+)?\!\[(.*?)\]\((.*?)\)\]\((.*?)\)/g;
+//   return str.replace(regex, function(match, p1, p2, p3, p4, p5) {
+//     return `${p1}![${p3}](${p4})/\n[${p3}](${p5})`;
+//   });
+// }
+
+function transformString2(input) {
+  const regex = /(?<!\\)!\[([^\]]+)\]\(([^)]+)\)/g;
+  const output = input.replace(regex, "![ $1 ]( $2 )");
+  return output.replace(/(?<=\n|^)(#+) (?=!\[)/g, "");
+}
+
 async function transform(post, inlineMap, heroMap, authorMap) {
 
+  
 
-const document = await richTextFromMarkdown('# Hello World');
-
-const marek = replaceInlineImageUrls(post.body, inlineMap)
+const marek = transformString2(transformString1(replaceInlineImageUrls(post.body, inlineMap)))
 const body = await richTextFromMarkdown(marek, (node) => {
 
   const aaa = node.url.split('/')[4]
-
-  console.log('aaa', aaa)
 
  
  const ttt=  {
@@ -222,11 +237,18 @@ const body = await richTextFromMarkdown(marek, (node) => {
 
   }})
 const description = await richTextFromMarkdown(replaceInlineImageUrls(post.description, inlineMap))
+// 5% deposit on a new home sound good?
 
 const postImageId =  heroMap.get(post.featured_media || post.bodyImages[0]) || inlineMap.get(post.featured_media || post.bodyImages[0]?.link) 
 
+
+if (!postImageId) {
+  console.log('Missing postImageId', post.title)
+}
+
             // '//images.ctfassets.net/uh890olxrk00/6ag9maB6OBm8XAOIjKJB6s/79f3ec6e911482a187b3a7c98940d8e6/christmas.jpg'
-const ttt = postImageId.split('/')[4]
+const ttt = postImageId?.split('/')?.[4]
+
 
   return {
     fields: {
@@ -250,7 +272,7 @@ const ttt = postImageId.split('/')[4]
           sys: {
             type: "Link",
             linkType: "Asset",
-            id: ttt
+            id: ttt || ''
           }
         }
       },
@@ -304,7 +326,8 @@ async function processBlogPosts(client, observer = MOCK_OBSERVER) {
 
 
   // TODO: operate on single post for now.
-  const queue = [...files].sort();
+  // const queue = [...files].slice(0,20).filter(file => file === "3-million-dividends-july-2019.json").sort();
+  const queue = [...files].slice(0,100).sort();
 
   const posts = [];
   while (queue.length) {
