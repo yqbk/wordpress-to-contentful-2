@@ -1,0 +1,80 @@
+[
+  {
+    "id": 5,
+    "name": "Queenie Ling",
+    "url": "",
+    "description": "",
+    "link": "https://raiz.com.my/blog/author/queenie/",
+    "slug": "queenie",
+    "avatar_urls": {
+      "24": "https://secure.gravatar.com/avatar/8918a2c99657a148c6e54e85b5c4c78e?s=24&d=mm&r=g",
+      "48": "https://secure.gravatar.com/avatar/8918a2c99657a148c6e54e85b5c4c78e?s=48&d=mm&r=g",
+      "96": "https://secure.gravatar.com/avatar/8918a2c99657a148c6e54e85b5c4c78e?s=96&d=mm&r=g"
+    },
+    "meta": [],
+    "_links": {
+      "self": [
+        {
+          "href": "https://raiz.com.my/blog/wp-json/wp/v2/users/5"
+        }
+      ],
+      "collection": [
+        {
+          "href": "https://raiz.com.my/blog/wp-json/wp/v2/users"
+        }
+      ]
+    }
+  },
+  {
+    "id": 1,
+    "name": "raiz_my",
+    "url": "",
+    "description": "",
+    "link": "https://raiz.com.my/blog/author/raiz_my/",
+    "slug": "raiz_my",
+    "avatar_urls": {
+      "24": "https://secure.gravatar.com/avatar/7cf23edc2438b1b668ab304318941c21?s=24&d=mm&r=g",
+      "48": "https://secure.gravatar.com/avatar/7cf23edc2438b1b668ab304318941c21?s=48&d=mm&r=g",
+      "96": "https://secure.gravatar.com/avatar/7cf23edc2438b1b668ab304318941c21?s=96&d=mm&r=g"
+    },
+    "meta": [],
+    "_links": {
+      "self": [
+        {
+          "href": "https://raiz.com.my/blog/wp-json/wp/v2/users/1"
+        }
+      ],
+      "collection": [
+        {
+          "href": "https://raiz.com.my/blog/wp-json/wp/v2/users"
+        }
+      ]
+    }
+  },
+  {
+    "id": 2,
+    "name": "support",
+    "url": "",
+    "description": "",
+    "link": "https://raiz.com.my/blog/author/support/",
+    "slug": "support",
+    "avatar_urls": {
+      "24": "https://secure.gravatar.com/avatar/53eefd4968d8f04b629b22bc2749f679?s=24&d=mm&r=g",
+      "48": "https://secure.gravatar.com/avatar/53eefd4968d8f04b629b22bc2749f679?s=48&d=mm&r=g",
+      "96": "https://secure.gravatar.com/avatar/53eefd4968d8f04b629b22bc2749f679?s=96&d=mm&r=g"
+    },
+    "meta": [],
+    "_links": {
+      "self": [
+        {
+          "href": "https://raiz.com.my/blog/wp-json/wp/v2/users/2"
+        }
+      ],
+      "collection": [
+        {
+          "href": "https://raiz.com.my/blog/wp-json/wp/v2/users"
+        }
+      ]
+    }
+  }
+]

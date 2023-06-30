@@ -1,6 +1,6 @@
-const path = require("path");
-const fs = require("fs-extra");
-const { Observable } = require("rxjs");
+const path = require('path');
+const fs = require('fs-extra');
+const { Observable } = require('rxjs');
 const { richTextFromMarkdown } = require('@contentful/rich-text-from-markdown');
 
 const {
@@ -12,7 +12,7 @@ const {
   CONTENTFUL_FALLBACK_USER_ID,
   ASSET_DIR_LIST,
   findByGlob
-} = require("../util");
+} = require('../util');
 
 // Do not exceed ten, delay is an important factor too
 // 8 processes and 1s delay seem to make sense, for 10p/s
@@ -22,10 +22,10 @@ const PROCESSES = 8;
 const API_DELAY_DUR = 1000;
 const UPLOAD_TIMEOUT = 60000;
 
-const CONTENT_TYPE = "blogPost";
-const DONE_FILE_PATH = path.join(ASSET_DIR_LIST, "done.json");
-const AUTHOR_FILE_PATH = path.join(USER_DIR_TRANSFORMED, "authors.json");
-const RESULTS_PATH = path.join(POST_DIR_CREATED, "posts.json");
+const CONTENT_TYPE = 'blogPost';
+const DONE_FILE_PATH = path.join(ASSET_DIR_LIST, 'done.json');
+const AUTHOR_FILE_PATH = path.join(USER_DIR_TRANSFORMED, 'authors.json');
+const RESULTS_PATH = path.join(POST_DIR_CREATED, 'posts.json');
 
 const delay = (dur = API_DELAY_DUR) =>
   new Promise(resolve => setTimeout(resolve, dur));
@@ -44,9 +44,7 @@ const createBlogPosts = (posts, assets, authors, client, observer) => {
 
     const logProgress = () => {
       observer.next(
-        `Remaining: ${queue.length} (${processing.size} uploading, ${
-          done.length
-        } done, ${failed.length} failed)`
+        `Remaining: ${queue.length} (${processing.size} uploading, ${done.length} done, ${failed.length} failed)`
       );
     };
 
@@ -60,61 +58,94 @@ const createBlogPosts = (posts, assets, authors, client, observer) => {
           new Promise((_, reject) => setTimeout(reject, UPLOAD_TIMEOUT)),
           new Promise(async (resolve, reject) => {
             await delay();
-
+    
             const exists = await client.getEntries({
               content_type: CONTENT_TYPE,
-              "fields.slug[in]": post.slug
+              'fields.slug[in]': post.slug,
+              'fields.title[in]': post.title 
             });
+
+            
+     
+           
             if (exists && exists.total > 0) {
-              return reject({ error: "Post already exists", post: exists });
-            }
+              console.log('File already exists, skipped');
+              // const files = await findByGlob(`${identifier}.json`, { cwd: POST_DIR_TRANSFORMED });
+              // if (files.length > 0) {
+              //   const filePath = path.join(POST_DIR_TRANSFORMED, files[0]);
+              //   fs.unlink(filePath, err => {
+              //     if (err) {
+              //       console.error(`Wystąpił błąd podczas usuwania pliku: ${err}`);
+              //     } else {
+              //       console.log(`File ${identifier}.json has been deleted.`);
+              //     }
+              //   });
+              // }
 
-            await delay();
-
-            const tt =  await transform(post, inlineMap, heroMap, authorMap)
-
-            console.log('tt', tt)
-
-            const t1 = tt.fields.body["en-US"].content
-
-            const url1 = "https://raizinvest.com.au/gettheapp"
-            const url2 =  "https://3yef.adj.st/home?adj_t=4emcfc6_1okyyjf&adj_deep_link=raiz%3A%2F%2Fhome&adj_fallback=https%3A%2F%2Fapp.raizinvest.com.au%2F"
-
-            const checkIsIncorrectBlock = c => c.content[0].nodeType === 'hyperlink' && c.content[0].content[0].nodeType === 'embedded-asset-block' && (c.content[0].data.uri === url1 || c.content[0].data.uri === url2)
-
-            const blockToReplace = {
-              "data": {
-                  "target": {
-                      "sys": {
-                          "id": "1np7UUpbCCtQYZkZXVbCLl",
-                          "type": "Link",
-                          "linkType": "Entry"
-                      }
-                  }
-              },
-              "content": [],
-              "nodeType": "embedded-entry-block"
-          }
-
-            // const t2 = tt.fields.body["en-US"].content.filter(c => c.nodeType === 'paragraph').map(c =>{
-            //   if (checkIsIncorrectBlock(c)) {
-            //     return blockToReplace
-            //   }
-
-            //   return c
-            //   })
-
-              const t3 = tt.fields.body["en-US"].content.reduce((acc,curr) => {
-
-                if (curr.nodeType === 'paragraph' && checkIsIncorrectBlock(curr)) {
-                  return [...acc, blockToReplace]
-                } else {
-                  return [...acc, curr]
+              fs.unlinkSync(path.resolve(POST_DIR_TRANSFORMED, `${post.slug}.json`), err => {
+                if (err) {
+                  console.error("Wystąpił błąd podczas usuwania pliku: ", post.slug);
                 }
+              });
+              console.log("File removed:", post.slug)
 
+              // Move to duplicated directory
+              return resolve();
+            }
+    
+            await delay();
+            try {
+              const tt = await transform(post, inlineMap, heroMap, authorMap);
 
-              }, [])
-
+              const t1 = tt.fields.body['en-US'].content;
+  
+              const url1 = 'https://raizinvest.com.au/gettheapp';
+              const url2 =
+                'https://3yef.adj.st/home?adj_t=4emcfc6_1okyyjf&adj_deep_link=raiz%3A%2F%2Fhome&adj_fallback=https%3A%2F%2Fapp.raizinvest.com.au%2F';
+  
+              const url3 =
+                'https://3yef.adj.st/home?adj_t=r3wdvoc_4niwitq&adj_deep_link=raiz%3A%2F%2Fhome&adj_fallback=http%3A%2F%2Fwww.raizinvest.com.au%2Fgettheapp';
+  
+              const checkIsIncorrectBlock = c =>
+                c.content[0].nodeType === 'hyperlink' &&
+                c.content[0].content[0].nodeType === 'embedded-asset-block' &&
+                (c.content[0].data.uri === url1 ||
+                  c.content[0].data.uri === url2 ||
+                  c.content[0].data.uri === url3);
+  
+              const blockToReplace = {
+                data: {
+                  target: {
+                    sys: {
+                      id: '1np7UUpbCCtQYZkZXVbCLl',
+                      type: 'Link',
+                      linkType: 'Entry'
+                    }
+                  }
+                },
+                content: [],
+                nodeType: 'embedded-entry-block'
+              };
+  
+              // const t2 = tt.fields.body["en-US"].content.filter(c => c.nodeType === 'paragraph').map(c =>{
+              //   if (checkIsIncorrectBlock(c)) {
+              //     return blockToReplace
+              //   }
+  
+              //   return c
+              //   })
+  
+              const t3 = tt.fields.body['en-US'].content.reduce((acc, curr) => {
+                if (
+                  curr.nodeType === 'paragraph' &&
+                  checkIsIncorrectBlock(curr)
+                ) {
+                  return [...acc, blockToReplace];
+                } else {
+                  return [...acc, curr];
+                }
+              }, []);
+  
               // ).map(c =>{
               //   if (checkIsIncorrectBlock(c)) {
               //     return blockToReplace
@@ -122,23 +153,28 @@ const createBlogPosts = (posts, assets, authors, client, observer) => {
   
               //   return c
               //   })
-
-            const tx = t3
-
-            tt.fields.body["en-US"].content = tx
-
-
-            const created = await client.createEntry(
-              CONTENT_TYPE,
-              tt
-            );
+  
+              const tx = t3;
+  
+              tt.fields.body['en-US'].content = tx;
+            const created = await client.createEntry(CONTENT_TYPE, tt);
 
             await delay();
             const published = await created.publish();
             await delay();
+
+            fs.unlinkSync(path.resolve(POST_DIR_TRANSFORMED, `${post.slug}.json`), err => {
+              if (err) {
+                console.error("Wystąpił błąd podczas usuwania pliku: ", post.slug);
+              }
+            });
+            console.log("File removed:", post.slug)
             resolve(published);
 
-            console.log('\n\n\nTEST', )
+            } catch(error) {
+              console.log('Failed to parse post:', post.slug)
+              resolve()
+            }
 
           })
         ])
@@ -146,6 +182,8 @@ const createBlogPosts = (posts, assets, authors, client, observer) => {
           // happy path
           .then(published => {
             done.push(post);
+            // Usuwanie pliku po udanym wrzuceniu posta
+            
           })
           // badness
           .catch(error => {
@@ -175,12 +213,10 @@ const createBlogPosts = (posts, assets, authors, client, observer) => {
   });
 };
 
-
 function transformString1(str) {
   const regex = /\[!\[(.*?)\]\((.*?)\)\]\((.*?)\)/g;
-  return str.replace(regex, "![$1]($2)/\n[$1]($3)");
+  return str.replace(regex, '![$1]($2)\n[$1]($3)');
 }
-
 // function transformString(str) {
 //   const regex = /(^|\n)(#+\s+)?\!\[(.*?)\]\((.*?)\)\]\((.*?)\)/g;
 //   return str.replace(regex, function(match, p1, p2, p3, p4, p5) {
@@ -188,67 +224,198 @@ function transformString1(str) {
 //   });
 // }
 
+function modifyString(input) {
+  const regex = /\[!\[(.*?)\]/g;
+  return input.replace(regex, '[$1]');
+}
+
 function transformString2(input) {
   const regex = /(?<!\\)!\[([^\]]+)\]\(([^)]+)\)/g;
-  const output = input.replace(regex, "![ $1 ]( $2 )");
-  return output.replace(/(?<=\n|^)(#+) (?=!\[)/g, "");
+  const output = input.replace(regex, '![ $1 ]( $2 )');
+  return output.replace(/(?<=\n|^)(#+) (?=!\[)/g, '');
 }
 
 async function transform(post, inlineMap, heroMap, authorMap) {
+  const marek = transformString2(replaceInlineImageUrls(post.body, inlineMap));
 
-  
+  const body = await richTextFromMarkdown(marek, node => {
+    const aaa = node?.url?.split('/')[4] ?? node?.url?.split('/')[5] 
 
-const marek = transformString2(transformString1(replaceInlineImageUrls(post.body, inlineMap)))
-const body = await richTextFromMarkdown(marek, (node) => {
+    const ttt = {
+      data: {
+        target: {
+          sys: {
+            id: '67890',
+            type: 'Link',
+            linkType: 'Asset'
+          }
+        }
+      },
+      content: [],
+      nodeType: 'embedded-asset-block'
+    };
 
-  const aaa = node.url.split('/')[4]
-
- 
- const ttt=  {
-    "data": {
-      "target": {
-        "sys": {
-          "id": "67890",
-          "type": "Link",
-          "linkType": "Asset"
+    return {
+      // nodeType: 'embedded-[entry|asset]-[block|inline]',
+      // embedded-entry-block
+      // nodeType: 'embedded-asset-block',
+      nodeType: 'embedded-asset-block',
+      content: [],
+      data: {
+        target: {
+          sys: {
+            type: 'Link',
+            linkType: 'Asset',
+            id: aaa
+          }
         }
       }
-    },
-    "content": [],
-    "nodeType": "embedded-asset-block"
+    };
+  });
+  const description = await richTextFromMarkdown(
+    replaceInlineImageUrls(post.description, inlineMap)
+  );
+  // 5% deposit on a new home sound good?
+
+  const postImageId =
+    heroMap.get(post.featured_media || post.bodyImages[0]) ||
+    inlineMap.get(post.featured_media || post.bodyImages[0]?.link);
+
+  if (!postImageId) {
+    console.log('Missing postImageId', post.title);
   }
 
-  return {
+  // '//images.ctfassets.net/uh890olxrk00/6ag9maB6OBm8XAOIjKJB6s/79f3ec6e911482a187b3a7c98940d8e6/christmas.jpg'
+  let ttt = postImageId?.split('/')?.[4];
 
-  // nodeType: 'embedded-[entry|asset]-[block|inline]',
-  // embedded-entry-block
-  // nodeType: 'embedded-asset-block',
-  nodeType: 'embedded-asset-block',
-  content: [],
-  data: {
-    target: {
-      sys: {
-        type: "Link",
-        linkType: "Asset",
-        id: aaa
+  const paths = [
+    body?.content?.[2]?.content?.[0]?.content?.[0],
+    body?.content?.[9]?.content?.[0]?.content?.[0],
+    body?.content?.[13]?.content?.[0]?.content?.[0],
+    body?.content?.[19]?.content?.[0]?.content?.[0],
+    body?.content?.[10]?.content?.[0]?.content?.[0],
+    body?.content?.[14]?.content?.[0]?.content?.[0],
+    body?.content?.[20]?.content?.[0]?.content?.[0],
+    body?.content?.[17]?.content?.[0]?.content?.[0],
+    body?.content?.[18]?.content?.[0]?.content?.[0],
+    body?.content?.[63]?.content?.[0]?.content?.[0],
+    body?.content?.[0]?.content?.[0]?.content?.[0],
+    body?.content?.[21]?.content?.[0]?.content?.[0],
+    body?.content?.[26]?.content?.[0]?.content?.[0],
+    body?.content?.[15]?.content?.[0]?.content?.[0],
+    body?.content?.[28]?.content?.[0]?.content?.[0],
+    body?.content?.[12]?.content?.[0]?.content?.[0],
+    body?.content?.[24]?.content?.[0]?.content?.[0],
+    body?.content?.[25]?.content?.[0]?.content?.[0],
+    body?.content?.[35]?.content?.[0]?.content?.[0],
+    body?.content?.[11]?.content?.[0]?.content?.[0],
+    body?.content?.[16]?.content?.[0]?.content?.[0],
+    body?.content?.[27]?.content?.[0]?.content?.[0],
+    body?.content?.[31]?.content?.[0]?.content?.[0],
+    body?.content?.[42]?.content?.[0]?.content?.[0],
+    body?.content?.[32]?.content?.[0]?.content?.[0],
+    body?.content?.[60]?.content?.[0]?.content?.[0],
+    body?.content?.[53]?.content?.[0]?.content?.[0],
+    body?.content?.[33]?.content?.[0]?.content?.[0],
+    body?.content?.[56]?.content?.[0]?.content?.[0],
+    body?.content?.[52]?.content?.[0]?.content?.[0],
+    body?.content?.[41]?.content?.[0]?.content?.[0],
+    body?.content?.[34]?.content?.[0]?.content?.[0],
+    body?.content?.[44]?.content?.[0]?.content?.[0],
+    body?.content?.[17]?.content?.[0]?.content?.[5],
+    body?.content?.[17]?.content?.[0]?.content?.[0]?.content?.[5],
+    body?.content?.[46]?.content?.[0]?.content?.[0],
+    body?.content?.[87]?.content?.[0]?.content?.[0],
+    body?.content?.[58]?.content?.[0]?.content?.[0],
+    body?.content?.[43]?.content?.[0]?.content?.[0],
+    body?.content?.[12]?.content?.[1]?.content?.[0]?.content?.[3],
+    body?.content?.[3]?.content?.[1],
+    body?.content?.[33]?.content?.[1],
+
+  ];
+  
+  paths.forEach(path => {
+    if (path?.nodeType === 'embedded-asset-block') {
+      path.nodeType = 'text';
+      path.marks = [];
+      path.value = '';
+      delete path.content;
+    }
+  });
+
+  const paths2 = [
+    body?.content?.[1]?.content?.[2],
+    body?.content?.[10]?.content?.[1],
+    body?.content?.[6]?.content?.[1],
+    body?.content?.[5]?.content?.[1],
+    body?.content?.[5]?.content?.[3],
+    body?.content?.[4]?.content?.[0],
+    body?.content?.[4]?.content?.[1],
+    body?.content?.[17]?.content?.[0],
+    body?.content?.[10]?.content?.[0],
+    body?.content?.[29]?.content?.[0],
+    body?.content?.[19]?.content?.[0],
+    body?.content?.[16]?.content?.[0],
+    body?.content?.[15]?.content?.[0],
+    body?.content?.[20]?.content?.[0],
+    body?.content?.[20]?.content?.[1],
+    body?.content?.[14]?.content?.[0],
+    body?.content?.[14]?.content?.[1],
+    body?.content?.[19]?.content?.[0]?.content?.[3],
+    body?.content?.[19]?.content?.[0]?.content?.[0]?.content?.[3],
+    body?.content?.[19]?.content?.[1],
+    body?.content?.[22]?.content?.[0],
+    body?.content?.[27]?.content?.[0],
+    body?.content?.[37]?.content?.[0],
+    body?.content?.[42]?.content?.[0],
+    body?.content?.[45]?.content?.[1],
+    body?.content?.[52]?.content?.[1],
+    body?.content?.[52]?.content?.[0],
+    body?.content?.[47]?.content?.[1],
+    body?.content?.[47]?.content?.[0],
+    body?.content?.[47]?.content?.[2],
+    body?.[0]
+  ]
+
+  paths2.forEach(path => {
+    if (path?.nodeType === 'embedded-asset-block') {
+      path.nodeType = 'embedded-entry-inline';
+      delete path.marks;
+      delete path.value;
+      if (path?.data?.target?.sys) {
+        path.data.target.sys.linkType = 'Entry'
+        path.data.target.sys.id = '6t73L5xaqXCO3c2Gmja2Uo';
       }
-    },
+    }
+  });
+
+  function stringToUrl(input) {
+    const regex = /[^a-zA-Z0-9-_.:/?=%\u00C0-\u017F]+/g;
+    return input.replace(regex, '');
   }
-
-  }})
-const description = await richTextFromMarkdown(replaceInlineImageUrls(post.description, inlineMap))
-// 5% deposit on a new home sound good?
-
-const postImageId =  heroMap.get(post.featured_media || post.bodyImages[0]) || inlineMap.get(post.featured_media || post.bodyImages[0]?.link) 
-
-
-if (!postImageId) {
-  console.log('Missing postImageId', post.title)
-}
-
-            // '//images.ctfassets.net/uh890olxrk00/6ag9maB6OBm8XAOIjKJB6s/79f3ec6e911482a187b3a7c98940d8e6/christmas.jpg'
-const ttt = postImageId?.split('/')?.[4]
-
+  // "details": {
+  //   "errors": [
+  //     {
+  //       "name": "in",
+  //       "details": "Value must be one of expected values",
+  //       "path": [
+  //         "fields",
+  //         "body",
+  //         "en-US",
+  //         "content",
+  //         14,
+  //         "content",
+  //         0,
+  //         "content",
+  //         0,
+  //         "nodeType"
+  //       ],
+  //       "value": "embedded-asset-block",
+  //       "expected": [
+  //         "text"
+  //       ]
+  //     }
+  //   ]
 
   return {
     fields: {
@@ -262,7 +429,7 @@ const ttt = postImageId?.split('/')?.[4]
         [CONTENTFUL_LOCALE]: replaceInlineImageUrls(post.description, inlineMap)
       },
       slug: {
-        [CONTENTFUL_LOCALE]: post.slug
+        [CONTENTFUL_LOCALE]: stringToUrl(post.slug)
       },
       date: {
         [CONTENTFUL_LOCALE]: post.publishDate
@@ -270,12 +437,12 @@ const ttt = postImageId?.split('/')?.[4]
       postImage: {
         [CONTENTFUL_LOCALE]: {
           sys: {
-            type: "Link",
-            linkType: "Asset",
-            id: ttt || ''
+            type: 'Link',
+            linkType: 'Asset',
+            id: ttt ?? '33KyDR0eQ3AKgee5PtVx9D'
           }
         }
-      },
+      }
       // author: {
       //   [CONTENTFUL_LOCALE]: {
       //     sys: {
@@ -322,12 +489,13 @@ function createMapFromAuthors(authors) {
 }
 
 async function processBlogPosts(client, observer = MOCK_OBSERVER) {
-  const files = await findByGlob("*.json", { cwd: POST_DIR_TRANSFORMED });
-
+  const files = await findByGlob('*.json', { cwd: POST_DIR_TRANSFORMED });
 
   // TODO: operate on single post for now.
-  // const queue = [...files].slice(0,20).filter(file => file === "3-million-dividends-july-2019.json").sort();
-  const queue = [...files].slice(0,100).sort();
+  // const queue = [...files].sort();
+  const queue = [...files].sort();
+  // const queue = [...files].sort();
+  //.filter(file => file === 'are-you-interested-in-property.json')
 
   const posts = [];
   while (queue.length) {
@@ -343,18 +511,25 @@ async function processBlogPosts(client, observer = MOCK_OBSERVER) {
   const assets = await fs.readJson(DONE_FILE_PATH);
   const authors = await fs.readJson(AUTHOR_FILE_PATH);
 
-  const result = await createBlogPosts(
-    posts,
-    assets,
-    authors,
-    client,
-    observer
-  );
+  let result;
 
-  await fs.ensureDir(POST_DIR_CREATED);
-  await fs.writeJson(RESULTS_PATH, result, { spaces: 2 });
+  let skipRecord = false;
+
+  try {
+    result = await createBlogPosts(posts, assets, authors, client, observer);
+  } catch (error) {
+    console.error('Post title z errorem:', post);
+    console.log(error, 'tutaj error jest')
+    skipRecord = true;
+  }
+
+  if (!skipRecord) {
+    await fs.ensureDir(POST_DIR_CREATED);
+    await fs.writeJson(RESULTS_PATH, result, { spaces: 2 });
+  }
   return result;
 }
+
 
 module.exports = client =>
   new Observable(observer =>

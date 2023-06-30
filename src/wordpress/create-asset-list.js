@@ -1,14 +1,14 @@
-const fetch = require("node-fetch");
-const fs = require("fs-extra");
-const path = require("path");
-const { Observable } = require("rxjs");
+const fetch = require('node-fetch');
+const fs = require('fs-extra');
+const path = require('path');
+const { Observable } = require('rxjs');
 const {
   ASSET_DIR_LIST,
   POST_DIR_TRANSFORMED,
   MOCK_OBSERVER,
   WP_API_URL,
   findByGlob
-} = require("../util");
+} = require('../util');
 
 const urlById = (url, id) => `${url}/media/${id}`;
 
@@ -25,8 +25,8 @@ const listOfImagesByPost = async (post, url) => {
       images.push({
         mediaNumber,
         link: json.guid.rendered,
-        title: json.title.rendered || "",
-        description: json.alt_text || "",
+        title: json.title.rendered || json.title || '',
+        description: json.alt_text || '',
         postId
       });
     }
@@ -36,7 +36,7 @@ const listOfImagesByPost = async (post, url) => {
 
 const assets = async (url, observer = MOCK_OBSERVER) => {
   await fs.ensureDir(ASSET_DIR_LIST);
-  const files = await findByGlob("*.json", { cwd: POST_DIR_TRANSFORMED });
+  const files = await findByGlob('*.json', { cwd: POST_DIR_TRANSFORMED });
   observer.next(`Processing ${files.length} posts`);
   const queue = [...files].sort();
   let list = [];
@@ -52,7 +52,7 @@ const assets = async (url, observer = MOCK_OBSERVER) => {
     );
   }
 
-  await fs.writeJson(path.join(ASSET_DIR_LIST, "assets.json"), list, {
+  await fs.writeJson(path.join(ASSET_DIR_LIST, 'assets.json'), list, {
     spaces: 2
   });
   observer.complete();
