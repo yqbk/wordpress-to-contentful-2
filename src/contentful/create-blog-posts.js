@@ -61,8 +61,7 @@ const createBlogPosts = (posts, assets, authors, client, observer) => {
     
             const exists = await client.getEntries({
               content_type: CONTENT_TYPE,
-              'fields.slug[in]': post.slug,
-              'fields.title[in]': post.title 
+              'fields.slug[in]': post.slug 
             });
 
             
@@ -272,10 +271,7 @@ async function transform(post, inlineMap, heroMap, authorMap) {
       }
     };
   });
-  const description = await richTextFromMarkdown(
-    replaceInlineImageUrls(post.description, inlineMap)
-  );
-  // 5% deposit on a new home sound good?
+ 
 
   const postImageId =
     heroMap.get(post.featured_media || post.bodyImages[0]) ||
@@ -288,136 +284,13 @@ async function transform(post, inlineMap, heroMap, authorMap) {
   // '//images.ctfassets.net/uh890olxrk00/6ag9maB6OBm8XAOIjKJB6s/79f3ec6e911482a187b3a7c98940d8e6/christmas.jpg'
   let ttt = postImageId?.split('/')?.[4];
 
-  const paths = [
-    body?.content?.[2]?.content?.[0]?.content?.[0],
-    body?.content?.[9]?.content?.[0]?.content?.[0],
-    body?.content?.[13]?.content?.[0]?.content?.[0],
-    body?.content?.[19]?.content?.[0]?.content?.[0],
-    body?.content?.[10]?.content?.[0]?.content?.[0],
-    body?.content?.[14]?.content?.[0]?.content?.[0],
-    body?.content?.[20]?.content?.[0]?.content?.[0],
-    body?.content?.[17]?.content?.[0]?.content?.[0],
-    body?.content?.[18]?.content?.[0]?.content?.[0],
-    body?.content?.[63]?.content?.[0]?.content?.[0],
-    body?.content?.[0]?.content?.[0]?.content?.[0],
-    body?.content?.[21]?.content?.[0]?.content?.[0],
-    body?.content?.[26]?.content?.[0]?.content?.[0],
-    body?.content?.[15]?.content?.[0]?.content?.[0],
-    body?.content?.[28]?.content?.[0]?.content?.[0],
-    body?.content?.[12]?.content?.[0]?.content?.[0],
-    body?.content?.[24]?.content?.[0]?.content?.[0],
-    body?.content?.[25]?.content?.[0]?.content?.[0],
-    body?.content?.[35]?.content?.[0]?.content?.[0],
-    body?.content?.[11]?.content?.[0]?.content?.[0],
-    body?.content?.[16]?.content?.[0]?.content?.[0],
-    body?.content?.[27]?.content?.[0]?.content?.[0],
-    body?.content?.[31]?.content?.[0]?.content?.[0],
-    body?.content?.[42]?.content?.[0]?.content?.[0],
-    body?.content?.[32]?.content?.[0]?.content?.[0],
-    body?.content?.[60]?.content?.[0]?.content?.[0],
-    body?.content?.[53]?.content?.[0]?.content?.[0],
-    body?.content?.[33]?.content?.[0]?.content?.[0],
-    body?.content?.[56]?.content?.[0]?.content?.[0],
-    body?.content?.[52]?.content?.[0]?.content?.[0],
-    body?.content?.[41]?.content?.[0]?.content?.[0],
-    body?.content?.[34]?.content?.[0]?.content?.[0],
-    body?.content?.[44]?.content?.[0]?.content?.[0],
-    body?.content?.[17]?.content?.[0]?.content?.[5],
-    body?.content?.[17]?.content?.[0]?.content?.[0]?.content?.[5],
-    body?.content?.[46]?.content?.[0]?.content?.[0],
-    body?.content?.[87]?.content?.[0]?.content?.[0],
-    body?.content?.[58]?.content?.[0]?.content?.[0],
-    body?.content?.[43]?.content?.[0]?.content?.[0],
-    body?.content?.[12]?.content?.[1]?.content?.[0]?.content?.[3],
-    body?.content?.[3]?.content?.[1],
-    body?.content?.[33]?.content?.[1],
 
-  ];
-  
-  paths.forEach(path => {
-    if (path?.nodeType === 'embedded-asset-block') {
-      path.nodeType = 'text';
-      path.marks = [];
-      path.value = '';
-      delete path.content;
-    }
-  });
-
-  const paths2 = [
-    body?.content?.[1]?.content?.[2],
-    body?.content?.[10]?.content?.[1],
-    body?.content?.[6]?.content?.[1],
-    body?.content?.[5]?.content?.[1],
-    body?.content?.[5]?.content?.[3],
-    body?.content?.[4]?.content?.[0],
-    body?.content?.[4]?.content?.[1],
-    body?.content?.[17]?.content?.[0],
-    body?.content?.[10]?.content?.[0],
-    body?.content?.[29]?.content?.[0],
-    body?.content?.[19]?.content?.[0],
-    body?.content?.[16]?.content?.[0],
-    body?.content?.[15]?.content?.[0],
-    body?.content?.[20]?.content?.[0],
-    body?.content?.[20]?.content?.[1],
-    body?.content?.[14]?.content?.[0],
-    body?.content?.[14]?.content?.[1],
-    body?.content?.[19]?.content?.[0]?.content?.[3],
-    body?.content?.[19]?.content?.[0]?.content?.[0]?.content?.[3],
-    body?.content?.[19]?.content?.[1],
-    body?.content?.[22]?.content?.[0],
-    body?.content?.[27]?.content?.[0],
-    body?.content?.[37]?.content?.[0],
-    body?.content?.[42]?.content?.[0],
-    body?.content?.[45]?.content?.[1],
-    body?.content?.[52]?.content?.[1],
-    body?.content?.[52]?.content?.[0],
-    body?.content?.[47]?.content?.[1],
-    body?.content?.[47]?.content?.[0],
-    body?.content?.[47]?.content?.[2],
-    body?.[0]
-  ]
-
-  paths2.forEach(path => {
-    if (path?.nodeType === 'embedded-asset-block') {
-      path.nodeType = 'embedded-entry-inline';
-      delete path.marks;
-      delete path.value;
-      if (path?.data?.target?.sys) {
-        path.data.target.sys.linkType = 'Entry'
-        path.data.target.sys.id = '6t73L5xaqXCO3c2Gmja2Uo';
-      }
-    }
-  });
 
   function stringToUrl(input) {
     const regex = /[^a-zA-Z0-9-_.:/?=%\u00C0-\u017F]+/g;
     return input.replace(regex, '');
   }
-  // "details": {
-  //   "errors": [
-  //     {
-  //       "name": "in",
-  //       "details": "Value must be one of expected values",
-  //       "path": [
-  //         "fields",
-  //         "body",
-  //         "en-US",
-  //         "content",
-  //         14,
-  //         "content",
-  //         0,
-  //         "content",
-  //         0,
-  //         "nodeType"
-  //       ],
-  //       "value": "embedded-asset-block",
-  //       "expected": [
-  //         "text"
-  //       ]
-  //     }
-  //   ]
-
-  return {
+const kuba = {
     fields: {
       title: {
         [CONTENTFUL_LOCALE]: post.title
@@ -439,23 +312,13 @@ async function transform(post, inlineMap, heroMap, authorMap) {
           sys: {
             type: 'Link',
             linkType: 'Asset',
-            id: ttt ?? '33KyDR0eQ3AKgee5PtVx9D'
+            id: ttt ?? ''
           }
         }
       }
-      // author: {
-      //   [CONTENTFUL_LOCALE]: {
-      //     sys: {
-      //       type: "Link",
-      //       linkType: "Entry",
-      //       id: authorMap.has(post.author)
-      //         ? authorMap.get(post.author)
-      //         : CONTENTFUL_FALLBACK_USER_ID
-      //     }
-      //   }
-      // }
     }
   };
+  return kuba
 }
 
 function replaceInlineImageUrls(text, map) {
